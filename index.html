@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MOOOO'd Tracker</title>
+    <link rel="manifest" href="./manifest.json">
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --empty-color: #000000;
+            --color-terrible: #222222;
+            --color-low: #444444;
+            --color-okay: #666666;
+            --color-good: #888888;
+            --color-great: #aaaaaa;
+            --text-light: #ffffff;
+            --text-dark: #111111;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: monospace;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .phone-container {
+            width: 100%;
+            max-width: 450px;
+            background: var(--bg-color);
+            min-height: 95vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .screen {
+            display: none;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        /* HOMEPAGE ELEMENTS */
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            width: 100%;
+        }
+
+        .header-title {
+            font-size: 3rem;
+            font-weight: 900;
+            letter-spacing: -1px;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 15px;
+        }
+
+        .reset-btn, .notif-btn {
+            background: transparent;
+            border: 1px solid #ccc;
+            color: #666;
+            padding: 4px 8px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        .notif-btn.active {
+            border-color: var(--text-dark);
+            color: var(--text-dark);
+            background-color: #f0f0f0;
+        }
+
+        .date-line {
+            font-size: 1rem;
+            font-weight: 700;
+            border-bottom: 2px solid var(--text-dark);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        /* DYNAMIC ADVENTURE NARRATOR BAR */
+        .adventure-bar {
+            background-color: #f0f0f0;
+            border: 2px solid var(--text-dark);
+            padding: 12px;
+            margin-bottom: 20px;
+            font-size: 0.85rem;
+            min-height: 64px;
+            line-height: 1.4;
+            position: relative;
+        }
+
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+            margin-bottom: 25px;
+        }
+
+        .checkin-slot {
+            width: 100%;
+            height: 75px;
+            background-color: var(--empty-color);
+            color: var(--text-light);
+            border: none;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            text-align: left;
+            position: relative;
+        }
+
+        .slot-label {
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .slot-data {
+            text-align: right;
+            max-width: 65%;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .slot-mood {
+            font-weight: 800;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+
+        .slot-emotions {
+            font-size: 0.75rem;
+            opacity: 0.9;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+            margin-top: 2px;
+        }
+
+        /* WIZARD UI */
+        .wizard-header {
+            font-size: 1.4rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            border-bottom: 2px solid var(--text-dark);
+            padding-bottom: 10px;
+            line-height: 1.3;
+        }
+
+        .npc-box {
+            display: flex;
+            gap: 15px;
+            background: #f9f9f9;
+            border: 2px solid var(--text-dark);
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .npc-avatar {
+            font-size: 2.5rem;
+        }
+
+        .npc-speech {
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .mood-options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .mood-btn {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid var(--text-dark);
+            background: transparent;
+            font-size: 1rem;
+            font-weight: 700;
+            text-align: left;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        .mood-btn:hover {
+            background-color: #f0f0f0;
+        }
+
+        .emotions-scroll-container {
+            flex-grow: 1;
+            max-height: 350px;
+            overflow-y: auto;
+            border: 2px solid var(--text-dark);
+            padding: 15px;
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .emotions-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .emotion-checkbox {
+            display: none;
+        }
+
+        .emotion-item-wrapper {
+            position: relative;
+        }
+
+        .emotion-label {
+            display: block;
+            border: 1px solid #ccc;
+            padding: 12px 10px;
+            text-align: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-transform: uppercase;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            background-color: #fff;
+        }
+
+        .definition-popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 85%;
+            max-width: 380px;
+            background-color: #111111;
+            color: #ffffff;
+            padding: 18px;
+            border: 3px solid #ffffff;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            z-index: 99999;
+            text-transform: none;
+            white-space: normal;
+            text-align: left;
+            box-shadow: 0px 8px 24px rgba(0,0,0,0.6);
+        }
+
+        .popup-shroud {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0,0,0,0.4);
+            z-index: 99998;
+            pointer-events: none;
+        }
+
+        .emotion-checkbox:checked + .emotion-label {
+            background-color: var(--text-dark);
+            color: var(--text-light);
+            border-color: var(--text-dark);
+        }
+
+        .action-btn {
+            width: 100%;
+            padding: 20px;
+            background-color: var(--text-dark);
+            color: var(--text-light);
+            font-size: 1.2rem;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        .action-btn:disabled {
+            background-color: #e0e0e0;
+            color: #a0a0a0;
+            cursor: not-allowed;
+            border: 1px solid #ccc;
+        }
+
+        .back-btn {
+            margin-top: 10px;
+            background: transparent;
+            color: var(--text-dark);
+            border: 1px solid var(--text-dark);
+        }
+
+        .word-cloud-section {
+            width: 100%;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px dashed #ccc;
+        }
+
+        .word-cloud-title {
+            font-size: 0.85rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .word-cloud-display {
+            width: 100%;
+            min-height: 90px;
+            background-color: #f9f9f9;
+            border: 2px solid var(--text-dark);
+            padding: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .cloud-tag {
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: transform 0.2s;
+            cursor: default;
+        }
+
+        .calendar-section {
+            width: 100%;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px dashed #ccc;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .calendar-title {
+            font-size: 0.85rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            width: 100%;
+        }
+
+        .calendar-day-head {
+            font-size: 0.65rem;
+            font-weight: 800;
+            text-align: center;
+            padding: 4px 0;
+            text-transform: uppercase;
+            color: #666;
+        }
+
+        .calendar-day-cell {
+            aspect-ratio: 1;
+            border: 1px solid #ddd;
+            font-size: 0.75rem;
+            font-weight: 700;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #fdfdfd;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.1s ease;
+        }
+
+        .calendar-day-cell.empty {
+            border: none;
+            background: transparent;
+            cursor: default;
+        }
+
+        .calendar-day-cell.today {
+            border: 2px solid var(--text-dark);
+        }
+
+        .calendar-day-cell.completed-5 {
+            border: 2px solid #000000;
+            box-shadow: inset 0 0 0 1px #ffffff;
+        }
+
+        .calendar-day-cell.completed-5:active {
+            transform: scale(0.92);
+        }
+
+        .cell-badge {
+            font-size: 0.7rem;
+            line-height: 1;
+            margin-top: 2px;
+        }
+
+        .bottom-blank-space {
+            height: 40px;
+        }
+
+        #screen-celebration {
+            background-color: #ffffff;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 80vh;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #screen-celebration.active {
+            display: flex;
+        }
+
+        .cow-emoji {
+            font-size: 18rem;
+            margin-bottom: 20px;
+            line-height: 1;
+        }
+
+        .celebration-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            line-height: 1.5;
+            color: var(--text-dark);
+            border: 2px solid var(--text-dark);
+            background-color: #f9f9f9;
+            padding: 15px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="popup-shroud" id="global-shroud"></div>
+    <div class="definition-popup" id="global-popup-portal"></div>
+
+    <div class="phone-container">
+        
+        <!-- SCREEN 1: HOMEPAGE -->
+        <div id="screen-home" class="screen active">
+            <div class="header-container">
+                <h1 class="header-title">MOOOO'd</h1>
+                <div class="header-actions">
+                    <button class="notif-btn" id="notif-toggle-btn" onclick="toggleNotifications()">🔔 Remind</button>
+                    <button class="reset-btn" onclick="resetAllSlots()">Reset</button>
+                </div>
+            </div>
+            <div class="date-line" id="current-date">DATE: --/--/----</div>
+            
+            <div class="adventure-bar" id="adventure-narrator">
+                The emotional pasture stands completely still. Five mysterious slots stretch across the map. Select Check In 1 to establish your path.
+            </div>
+            
+            <div class="timeline" id="timeline-container">
+                <button class="checkin-slot" id="slot-1" onclick="openWizard(1)">
+                    <span class="slot-label">Check In 1</span>
+                    <div class="slot-data" id="slot-data-1"></div>
+                </button>
+                <button class="checkin-slot" id="slot-2" onclick="openWizard(2)">
+                    <span class="slot-label">Check In 2</span>
+                    <div class="slot-data" id="slot-data-2"></div>
+                </button>
+                <button class="checkin-slot" id="slot-3" onclick="openWizard(3)">
+                    <span class="slot-label">Check In 3</span>
+                    <div class="slot-data" id="slot-data-3"></div>
+                </button>
+                <button class="checkin-slot" id="slot-4" onclick="openWizard(4)">
+                    <span class="slot-label">Check In 4</span>
+                    <div class="slot-data" id="slot-data-4"></div>
+                </button>
+                <button class="checkin-slot" id="slot-5" onclick="openWizard(5)">
+                    <span class="slot-label">Check In 5</span>
+                    <div class="slot-data" id="slot-data-5"></div>
+                </button>
+            </div>
+            
+            <div class="word-cloud-section">
+                <div class="word-cloud-title">Today's Emotion Cloud</div>
+                <div class="word-cloud-display" id="word-cloud-target">
+                    <span style="color: #bbb; font-size: 0.8rem; font-style: italic;">No items loaded. Complete a check-in.</span>
+                </div>
+            </div>
+
+            <div class="calendar-section">
+                <div class="calendar-header">
+                    <div class="calendar-title" id="calendar-month-year">MONTH YEAR</div>
+                </div>
+                <div class="calendar-grid" id="calendar-grid-target"></div>
+            </div>
+
+            <div class="word-cloud-section">
+                <div class="word-cloud-title" id="monthly-cloud-title">This Month's Emotion Cloud</div>
+                <div class="word-cloud-display" id="monthly-word-cloud-target">
+                    <span style="color: #bbb; font-size: 0.8rem; font-style: italic;">No monthly items logged yet.</span>
+                </div>
+            </div>
+
+            <div class="bottom-blank-space"></div>
+        </div>
+
+        <!-- SCREEN 2: MOOD SCALE DIALOGUE TREE -->
+        <div id="screen-mood" class="screen">
+            <h2 class="wizard-header">Dialogue Tree: Phase I</h2>
+            
+            <div class="npc-box">
+                <div class="npc-avatar">🐄</div>
+                <div class="npc-speech" id="npc-speech-prompt">
+                    "Mooo. A new situation arrives in the fields. Speak your mind, traveler: How fares your baseline mood?"
+                </div>
+            </div>
+
+            <div class="mood-options-list">
+                <button class="mood-btn" onclick="selectMood(5, 'Great')">=> "Everything is legendary! (5 - Great)"</button>
+                <button class="mood-btn" onclick="selectMood(4, 'Good')">=> "The pasture is bright. (4 - Good)"</button>
+                <button class="mood-btn" onclick="selectMood(3, 'Okay')">=> "Just chewing the cud. (3 - Okay)"</button>
+                <button class="mood-btn" onclick="selectMood(2, 'Low')">=> "Storm clouds hover near. (2 - Low)"</button>
+                <button class="mood-btn" onclick="selectMood(1, 'Terrible')">=> "Look behind you, a three-headed cow! (1 - Terrible)"</button>
+            </div>
+            <button class="action-btn back-btn" onclick="showScreen('home')">Escape Conversation</button>
+        </div>
+
+        <!-- SCREEN 3: RETORT GRID -->
+        <div id="screen-emotions" class="screen">
+            <h2 class="wizard-header" id="emotions-header">Dialogue Tree: Retorts</h2>
+            
+            <div class="npc-box">
+                <div class="npc-avatar">💀</div>
+                <div class="npc-speech" id="clash-speech-prompt">
+                    "Hold down any emotion to read its definition. Tap to select your retorts!"
+                </div>
+            </div>
+            
+            <div class="emotions-scroll-container" id="emotions-scroll-box">
+                <div class="emotions-grid" id="emotions-grid-container"></div>
+            </div>
+
+            <button class="action-btn" id="submit-entry-btn" onclick="saveCheckIn()" disabled>Lock Retort (OK)</button>
+            <button class="action-btn back-btn" onclick="showScreen('mood')">Change Stance</button>
+        </div>
+
+        <!-- SCREEN 4: COW CELEBRATION -->
+        <div id="screen-celebration" class="screen">
+            <div class="cow-emoji">🐄</div>
+            <div class="celebration-title" id="celebration-tagline-target">
+                "HOW APPROPRIATE, YOU FIGHT LIKE A DAIRY FARMER!"
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const cowVictoryTaglines = [
+            "\"You fight like a dairy farmer!\" ... \"How appropriate, you track like a cow!\"",
+            "\"My mental endurance will leave you in the dust!\" ... \"I'm shaking, I'm shaking!\"",
+            "\"I've spoken with cows wiser than you!\" ... \"Glad to see you attend the family reunions!\"",
+            "\"This day tried to tip me over!\" ... \"Too bad your stress lacks the necessary leverage!\"",
+            "\"My emotional retorts are sharper than a pirate's cutlass!\"",
+            "\"You run through your day like a cow in a pasture!\"",
+            "\"You think your daily stress can defeat me?\" ... \"Not with a fence that low!\"",
+            "\"I will defeat every mood hurdle on Melee Island!\"",
+            "\"Have you stopped chewing your cud yet?\" ... \"Only to deliver this victory retort!\"",
+            "\"My stamina is known throughout the entire archipelago!\"",
+            "\"Is that a storm cloud or just your attitude?\" ... \"It's the aura of a total victory!\"",
+            "\"I'll make you look like a three-headed cow!\"",
+            "\"No stress can stand against my emotional inventory!\"",
+            "\"My retorts are feared from Scumm Bar to the Big Mountain!\"",
+            "\"You move as slow as butter in winter!\" ... \"Yet I just crossed all five checkpoints!\"",
+            "\"Your daily plan was no match for my composure!\"",
+            "\"I came, I grazed, I conquered the whole timeline!\"",
+            "\"I'm the mightiest mood-tracker in the Caribbean!\"",
+            "\"Did you hear about the ghost pirate LeChuck?\" ... \"He couldn't tip this cow either!\"",
+            "\"Your mood swings are predictable!\" ... \"And my retorts are impeccable!\"",
+            "\"I've faced fierce pirates, but this day was a breeze!\"",
+            "\"No emotional storm can out-maneuver a well-seasoned traveler!\"",
+            "\"You fight like an untamed calf!\" ... \"How appropriate, I conquer like a bull!\"",
+            "\"Check-in five locked in! The governor will hear of this victory!\"",
+            "\"My emotional balance remains completely unshaken!\"",
+            "\"There's a rubber chicken with a pulley in my inventory!\"",
+            "\"Never pay more than 20 bucks for a computer game or a bad day!\"",
+            "\"Five slots completed. The pasture is officially secure!\"",
+            "\"Look behind you, a three-headed monkey! ... Nice try, I still logged slot five!\"",
+            "\"Another day logged, another victory for the Melee Island herd!\""
+        ];
+
+        const emotionsDatabase = {
+            5: ["Thrilled", "Ecstatic", "Radiant", "Elated", "Inspired", "Empowered", "Invincible", "Euphoric", "Blissful", "Overjoyed", "Vibrant", "Electrified", "Passionate", "Proud", "Triumphant", "Accomplished", "Grateful", "Blessed", "Loved", "Cherished", "Optimistic", "Eager", "Confident", "Bold", "Fired Up", "Motivated", "Driven", "Unstoppable", "Playful", "Cheerful", "Stoked", "Exuberant", "Dynamic", "Awestruck", "Carefree", "Lively", "Feisty", "Elevated", "Enthusiastic", "Exhilarated", "Fortunate", "Gladsome", "Gleeful", "Heady", "Impassioned", "Light", "Marvelous", "Plentiful", "Rapturous", "Revitalized", "Satisfied", "Splendid", "Stellar", "Sunny", "Superb", "Tickled", "Tranquil", "Upbeat", "Valiant", "Wonderful"],
+            4: ["Happy", "Content", "Peaceful", "Calm", "Serene", "Relaxed", "Cozy", "Satisfied", "Productive", "Focused", "Balanced", "Harmonious", "Safe", "Secure", "Resilient", "Hopeful", "Encouraged", "Friendly", "Social", "Amused", "Glad", "Pleased", "Mellow", "Easygoing", "Comforted", "Valued", "Appreciated", "Mindful", "Clearheaded", "Lighthearted", "Accepted", "Adequate", "Agreeable", "Assured", "Cheerful", "Collected", "Complacent", "Cordial", "Desirous", "Earnest", "Flourishing", "Genial", "Grounded", "Healthy", "Hearty", "Innocent", "Joyous", "Kind", "Lucky", "Patient", "Pleasant", "Quiet", "Reassured", "Satiated", "Stable", "Supported", "Tolerant", "Trusting", "Warm", "Willing"],
+            3: ["Neutral", "Fine", "Fine-ish", "In-Between", "So-So", "Indifferent", "Unmoved", "Passive", "Quiet", "Reserved", "Contemplative", "Pensive", "Distracted", "Daydreaming", "Bored", "Uninspired", "Tired", "Sleepy", "Sluggish", "Mellow", "Still", "Ordinary", "Routine", "Meh", "Unremarkable", "Adapting", "Patient", "Waiting", "Grounded", "Static", "Ambivalent", "Apathetic", "Automated", "Casual", "Centrist", "Cool", "Detached", "Dispassionate", "Equivocal", "Fair", "Formal", "Guard", "Hesitant", "Idle", "Inactive", "Lukewarm", "Moderate", "Modest", "Muted", "Navigating", "Nonchalant", "Objective", "Placid", "Preoccupied", "Resting", "Shiftless", "Subdued", "Typical", "Uncommitted", "Vague"],
+            2: ["Sad", "Blue", "Down", "Heavy", "Lonely", "Isolated", "Forgotten", "Disappointed", "Let Down", "Hurt", "Heartbroken", "Sulky", "Moody", "Somber", "Gloomy", "Melancholic", "Dejected", "Pessimistic", "Cynical", "Unmotivated", "Lethargic", "Apathetic", "Empty", "Lost", "Homesick", "Wistful", "Self-Critical", "Vulnerable", "Tearful", "Low-Energy", "Alienated", "Aloof", "Bleak", "Bowed", "Cheerless", "Clouded", "Crying", "Deflated", "Desolate", "Distant", "Doleful", "Dour", "Dreary", "Dull", "Excluded", "Faint", "Fragile", "Grief-Stricken", "Grim", "Insecure", "Joyless", "Languid", "Neglected", "Overlooked", "Pitying", "Rejected", "Sorrowful", "Spiritless", "Unhappy", "Weary"],
+            1: ["Overwhelmed", "Panicked", "Frustrated", "Furious", "Irritated", "Enraged", "Agitated", "Resentful", "Bitter", "Anxious", "Dreadful", "Terrified", "Apprehensive", "Exhausted", "Spent", "Burned Out", "Drained", "Stressed", "Pressured", "Flustered", "Defensive", "Insecure", "Threatened", "Trapped", "Helpless", "Defeated", "Crushed", "Miserable", "Desperate", "Alarmed", "Angered", "Annoyed", "Aghast", "Appalled", "Chagrined", "Choked", "Cornered", "Despairing", "Disgusted", "Dismayed", "Distressed", "Disturbed", "Fearful", "Frenzied", "Fretful", "Grieved", "Hateful", "Hopeless", "Hostile", "Incensed", "Intimidated", "Irate", "Jittery", "Mortified", "Offended", "Outraged", "Scared", "Shaken", "Shocked", "Vexed"]
+        };
+
+        const genericDefinitionFallback = "An emotional nuance or variance logged inside your daily framework mapping tracking arrays.";
+        const emotionDefinitions = {
+            "Thrilled": "Overwhelmed with sudden excitement, pleasure, or unexpected adventure.",
+            "Ecstatic": "A state of overwhelming, intense, and rapturous joy.",
+            "Radiant": "Emitting a clear, powerful aura of happiness and vivid energy.",
+            "Elated": "Exultantly proud and joyful; high-spirited and riding high.",
+            "Inspired": "Filled with an animated urge to create, execute, or explore new bounds.",
+            "Empowered": "Possessing a secure, confident command over your active environment.",
+            "Invincible": "Feeling completely incapable of being defeated or set back by stress.",
+            "Euphoric": "An intense, floating state of transcendent well-being and balance.",
+            "Blissful": "Completely serene, pristine, and untroubled by external noise.",
+            "Overjoyed": "Filled to absolute capacity with delight and positive feedback.",
+            "Vibrant": "Pulsing with life, clarity, and highly dynamic internal velocity.",
+            "Electrified": "Shocked into an acute, high-energy state of mental awakening.",
+            "Passionate": "Driven by an intense, deeply focused emotional commitment.",
+            "Proud": "Feeling deep structural satisfaction in your actions or identity.",
+            "Triumphant": "Celebrating a successful crossing or victory over an obstacle.",
+            "Accomplished": "Satisfied with a completed task or milestone checked off.",
+            "Grateful": "Deeply appreciative of present circumstances, gifts, or allies.",
+            "Blessed": "Favored by fortune; experiencing a profound sense of inner protection.",
+            "Loved": "Feeling deeply cherished, supported, and valued by those around you.",
+            "Cherished": "Held dear and protected with intentional mental tenderness.",
+            "Optimistic": "Possessing a highly favorable, bright outlook toward tomorrow.",
+            "Eager": "Keenly expectant and looking forward to the next challenge.",
+            "Confident": "Marked by firm self-assurance and belief in your current stance.",
+            "Bold": "Fearless, daring, and ready to make decisive layout maneuvers.",
+            "Fired Up": "Ignited with high-octane enthusiasm and immediate drive.",
+            "Motivated": "Propelled forward by clear intent and strategic execution focus.",
+            "Driven": "Compelled to execute tasks with zero structural hesitation.",
+            "Unstoppable": "Advancing with an absolute momentum that cannot be anchored down.",
+            "Playful": "Lighthearted, humorous, and open to creative, whimsical thoughts.",
+            "Cheerful": "Noticeably bright, pleasant, and full of optimistic good humor.",
+            "Stoked": "Immensely excited and thoroughly pleased with current trends.",
+            "Exuberant": "Filled with a lively, high-spirited abundance of positive energy.",
+            "Dynamic": "Characterized by constant change, active progress, and functional force.",
+            "Awestruck": "Filled with reverent wonder or deep, contemplative admiration.",
+            "Carefree": "Completely free from anxiety, weight, or heavy mental parameters.",
+            "Lively": "Full of life, active movement, and crisp mental responsiveness.",
+            "Feisty": "Touchy, full of spirit, and ready to confront situations head-on.",
+            "Elevated": "Raised to a superior, clear-minded emotional altitude.",
+            "Enthusiastic": "Showing intense, active enjoyment and eager interest.",
+            "Exhilarated": "Feeling refreshed, enlivened, and intensely wide awake.",
+            "Fortunate": "Bringing or indicating good fortune; structurally lucky.",
+            "Gladsome": "Giving or causing joy; inherently bright and cheerful.",
+            "Gleeful": "Exuberantly triumphant, joyful, and full of animated fun.",
+            "Heady": "Exhilarating, intoxicating, and filled with sharp mental velocity.",
+            "Impassioned": "Filled with or showing intense, concentrated emotion.",
+            "Light": "Free from heaviness, pressure, or dark environmental elements.",
+            "Marvelous": "Causing wonder; astonishingly excellent or extraordinarily pleasant.",
+            "Plentiful": "Existing in great quantity; experiencing an inner sense of abundance.",
+            "Rapturous": "Characterized by an ecstatic expression of pure pleasure.",
+            "Revitalized": "Imbued with fresh life, vigor, and renewed structural data.",
+            "Satisfied": "Contented with the fulfillment of current desires or needs.",
+            "Splendid": "Magnificent; exceptionally good or glorious in perspective.",
+            "Stellar": "Exceptionally good; performing at an absolute peak level.",
+            "Sunny": "Cheerfully bright; completely free from internal clouds.",
+            "Superb": "Marked by the highest quality; structurally excellent.",
+            "Tickled": "Amused and pleasantly surprised by an unexpected whim.",
+            "Tranquil": "Free from disturbance; completely calm, quiet, and settled.",
+            "Upbeat": "Cheerful, optimistic, and moving with a rapid forward tempo.",
+            "Valiant": "Possessing or showing courage or determination in your stance.",
+            "Wonderful": "Inspiring delight, pleasure, or admiration; extremely good.",
+
+            // 4 - Good
+            "Happy": "Feeling or showing clear pleasure, satisfaction, and contentment.",
+            "Content": "In a state of peaceful happiness and comfortable satisfaction.",
+            "Peaceful": "Untroubled by conflict or heavy agitation; tranquil and calm.",
+            "Calm": "Not showing or feeling nervousness, anger, or sudden excitement.",
+            "Serene": "Utterly calm, peaceful, and untroubled; clear skies inside.",
+            "Relaxed": "Free from tension, tightness, or urgent performance parameters.",
+            "Cozy": "Giving a feeling of comfort, warmth, and safe environmental shelter.",
+            "Satisfied": "Experiencing fulfillment without wanting anything modified.",
+            "Productive": "Achieving significant, effective results in active operations.",
+            "Focused": "Concentrating cleanly on a single point of interest or task.",
+            "Balanced": "Keeping mental variables and weights in perfect equilibrium.",
+            "Harmonious": "Tunefully coordinated; free from internal layout friction.",
+            "Safe": "Protected from structural danger, risk, or emotional threat vectors.",
+            "Secure": "Feeling completely safe, stable, and anchored in your situation.",
+            "Resilient": "Able to withstand or recover quickly from difficult conditions.",
+            "Hopeful": "Feeling or inspiring optimism about a future tracking target.",
+            "Encouraged": "Given fresh confidence or hope by positive context clues.",
+            "Friendly": "Kind, pleasant, and open to social interactions.",
+            "Social": "Seeking or enjoying the companionship of others; interactive.",
+            "Amused": "Finding entertainment or a light source of humor in the situation.",
+            "Glad": "Pleased and satisfied with a specific outcome or development.",
+            "Pleased": "Feeling pride or satisfaction; content with what occurred.",
+            "Mellow": "Pleasantly smooth, soft, and completely free from harshness.",
+            "Easygoing": "Relaxed and tolerant in approach; low operational friction.",
+            "Comforted": "Consoled; freed from underlying distress or isolation tags.",
+            "Valued": "Considered to be important and highly beneficial to the grid.",
+            "Appreciated": "Recognized with gratitude; valued correctly by external assets.",
+            "Mindful": "Consciously aware of the present moment without passing judgment.",
+            "Clearheaded": "Alert and thinking logically; free from mental clouding.",
+            "Lighthearted": "Carefree and cheerful; taking things with zero structural gravity.",
+            "Accepted": "Welcomed into a group or setting with full structural approval.",
+            "Adequate": "Satisfactory or acceptable in quality or quantity; enough.",
+            "Agreeable": "Quite enjoyable and baseline pleasant; aligned with preferences.",
+            "Assured": "Protected against failure; confidently certain of your position.",
+            "Collected": "Calm and composed; holding all elements together smoothly.",
+            "Complacent": "Uncritically satisfied with oneself or one's achievements.",
+            "Cordial": "Warm and friendly; politely pleasant in communication loops.",
+            "Desirous": "Having or characterized by desire; hopeful for expansion.",
+            "Earnest": "Resulting from or showing sincere and intense conviction.",
+            "Flourishing": "Developing rapidly and successfully; growing into optimal states.",
+            "Genial": "Friendly and cheerful; exhibiting a warm, welcoming presence.",
+            "Grounded": "Mentally stable and sensible; realistic and properly anchored.",
+            "Healthy": "In a good physical or mental condition; functioning normally.",
+            "Hearty": "Loudly cheerful, vigorous, and wholesome in execution.",
+            "Innocent": "Free from moral wrong; simple, clean, and unclouded.",
+            "Joyous": "Full of joy; characterized by sincere, sustainable pleasure.",
+            "Kind": "Having or showing a friendly, generous, and considerate nature.",
+            "Lucky": "Favored by chance; experiencing an unexpected positive variance.",
+            "Patient": "Able to accept delays or trouble without getting escalated.",
+            "Pleasant": "Giving a sense of happy satisfaction or enjoyment.",
+            "Quiet": "Carried on with utmost silence or minimal structural noise.",
+            "Reassured": "Saying or doing something to remove doubt or underlying anxiety.",
+            "Satiated": "Fully satisfied; standard resource limits completely met.",
+            "Stable": "Not likely to change, fail, or tip over unexpectedly.",
+            "Supported": "Borne up or held in place by strong, dependable columns.",
+            "Tolerant": "Showing willingness to allow alternative opinions or states.",
+            "Trusting": "Showing a secure belief in the reliability or truth of a node.",
+            "Warm": "Having or showing continuous affection or baseline comfort.",
+            "Willing": "Ready, eager, or prepared to execute a specific directive.",
+
+            // 3 - Okay
+            "Neutral": "An intermediate position showing no definitive positive or negative bias.",
+            "Fine": "In a satisfactory state; acceptable, though not explicitly grand.",
+            "Fine-ish": "Vaguely acceptable; meeting baseline specifications with slight doubt.",
+            "In-Between": "Occupying a middle transition zone; shifting between tracking zones.",
+            "So-So": "Neither explicitly good nor explicitly bad; completely average.",
+            "Indifferent": "Having no particular interest or sympathy; unconcerned.",
+            "Unmoved": "Not affected by emotion; remaining entirely static or detached.",
+            "Passive": "Accepting or allowing what happens without active response.",
+            "Quiet": "Characterized by an absence of high-intensity signal or action.",
+            "Reserved": "Slow to reveal emotions or opinions; keeping scripts internal.",
+            "Contemplative": "Expressing or involving prolonged, deep thought or study.",
+            "Pensive": "Engaged in, involving, or reflecting deep or serious thought.",
+            "Distracted": "Unable to concentrate cleanly; attention pulled by other threads.",
+            "Daydreaming": "Indulging in a waking reverie or detached internal simulation.",
+            "Bored": "Feeling weary and restless through lack of interesting inputs.",
+            "Uninspired": "Lacking creative energy, motivation, or fresh layout ideas.",
+            "Tired": "Drained of baseline strength as a result of continuous exertion.",
+            "Sleepy": "Inclined to sleep; processing a lower clock-cycle response rate.",
+            "Sluggish": "Slow to respond or move; tracking with higher latency.",
+            "Mellow": "Softened by overview or context; subdued and non-reactive.",
+            "Still": "Not moving or making a sound; calm and structurally quiet.",
+            "Ordinary": "With no special or distinctive features; standard factory default.",
+            "Routine": "Following a fixed sequence of standard daily procedures.",
+            "Meh": "Expressing a total lack of interest, value, or enthusiasm.",
+            "Unremarkable": "Not particularly interesting; surprising no diagnostic tool.",
+            "Adapting": "Modifying internal parameters to better suit current conditions.",
+            "Waiting": "Remaining inactive until an expected event or process executes.",
+            "Grounded": "Baseline sensible; keeping contact with the horizontal reference axis.",
+            "Static": "Lacking movement, development, or active data flow.",
+            "Ambivalent": "Having mixed feelings or contradictory ideas about something.",
+            "Apathetic": "Showing or feeling a total absence of interest or concern.",
+            "Automated": "Operating mechanically with zero conscious intervention required.",
+            "Casual": "Relaxed and unconcerned; missing formal constraints.",
+            "Centrist": "Holding moderate views; avoiding the edges of the scale.",
+            "Cool": "Showing no excitement; maintaining a detached composure.",
+            "Detached": "Separate or disconnected; viewing things objectively.",
+            "Dispassionate": "Not influenced by strong emotion; completely rational.",
+            "Equivocal": "Open to more than one interpretation; deliberately ambiguous.",
+            "Fair": "Moderately good; passing standard inspection criteria.",
+            "Formal": "Done in accordance with rules of convention or etiquette.",
+            "Guard": "Cautious and watchful; keeping perimeter firewalls active.",
+            "Hesitant": "Tentative; pausing before making a definitive system choice.",
+            "Idle": "Not active or in use; running minimal background cycles.",
+            "Inactive": "Not engaging in physical or mental exercise; dormant state.",
+            "Lukewarm": "Showing only a mild, unconvincing level of conviction.",
+            "Moderate": "Average in intensity or quality; keeping within bounds.",
+            "Modest": "Unassuming in the estimation of one's abilities or state.",
+            "Muted": "Deaden the sound or intensity of; quiet and soft-focused.",
+            "Navigating": "Plotting a course through standard, unexciting coordinates.",
+            "Nonchalant": "Feeling or appearing casually calm and completely relaxed.",
+            "Objective": "Not influenced by personal feelings in considering facts.",
+            "Placid": "Not easily upset or excited; peacefully calm.",
+            "Preoccupied": "Engrossed in an internal process thread to the exclusion of all else.",
+            "Resting": "Ceasing work or movement in order to relax or recover energy.",
+            "Shiftless": "Characterized by laziness, inefficiency, or lack of ambition.",
+            "Subdued": "Quiet and rather reflective; intensity manually turned down.",
+            "Typical": "Characteristic of a particular person, group, or standard pattern.",
+            "Uncommitted": "Not bound to a specific course of action or viewpoint.",
+            "Vague": "Thinking or communicating in an unfocused, imprecise way.",
+
+            // 2 - Low
+            "Sad": "Affected by unhappiness, sorrow, or heavy internal atmospheric pressure.",
+            "Blue": "Melancholic; down in spirits; viewing things through a darker filter.",
+            "Down": "Feeling a drop in emotional altitude; below standard baseline.",
+            "Heavy": "Oppressed by a weight of sorrow, weariness, or serious thought.",
+            "Lonely": "Sad because of a perceived isolation or lack of active connection.",
+            "Isolated": "Far away from other nodes; cut off from conversational assets.",
+            "Forgotten": "Left behind; not remembered or included in active threads.",
+            "Disappointed": "Sad because expectations failed to match reality arrays.",
+            "Let Down": "Feeling abandoned or failed by a node you depended on.",
+            "Hurt": "Experiencing mental pain or distress from an external impact.",
+            "Heartbroken": "Overwhelmed by deep, crushing sorrow or loss tags.",
+            "Sulky": "Morose, bad-tempered, and resentful; refusing to interact.",
+            "Moody": "Subject to unpredictable, unhelpful changes of inner state.",
+            "Somber": "Dark or dull in color or tone; gloomy and serious.",
+            "Gloomy": "Feeling distressed or pessimistic; light tracking near zero.",
+            "Melancholic": "Feeling or causing a deep, persistent, and pensive sadness.",
+            "Dejected": "Sad and dispirited; cast down by recent developments.",
+            "Pessimistic": "Tending to see the worst aspect of things or believe the worst will happen.",
+            "Cynical": "Believing that people are motivated purely by self-interest.",
+            "Unmotivated": "Lacking any internal incentive or driving force to execute.",
+            "Lethargic": "Sluggish and broken down; entirely lacking in functional energy.",
+            "Apathetic": "Experiencing zero internal interest, enthusiasm, or concern.",
+            "Empty": "Containing nothing; missing a core sense of meaning or purpose.",
+            "Lost": "Unable to find one's way; missing a clear orientation vector.",
+            "Homesick": "Experiencing a painful longing for a safe, familiar home space.",
+            "Wistful": "Having or showing a feeling of vague or regretful longing.",
+            "Self-Critical": "Evaluating oneself with harsh, unhelpful structural judgment.",
+            "Vulnerable": "Susceptible to physical or emotional attack or harm.",
+            "Tearful": "Inclined to weep; holding back a surge of heavy fluid data.",
+            "Low-Energy": "Operating at a highly restricted, defensive battery percentage.",
+            "Alienated": "Feeling isolated from a group or environment where you belong.",
+            "Aloof": "Not friendly or forthcoming; cool and structurally distant.",
+            "Bleak": "Lacking vegetation or comfort; cold and barren in perspective.",
+            "Bowed": "Bent with heavy burdens; submissive to current pressures.",
+            "Cheerless": "Gloomy; completely depressing; lacking any bright indicators.",
+            "Clouded": "Lacking clarity or brightness; foggy mental workspace.",
+            "Crying": "Shedding tears in response to an intense internal surge.",
+            "Deflated": "Feeling suddenly empty of confidence, air, or driving force.",
+            "Desolate": "Feeling a bleak, empty, and utterly joyless loneliness.",
+            "Distant": "Separated by an immense space or barrier; hard to reach.",
+            "Doleful": "Expressing sorrow; mournful and structurally downcast.",
+            "Dour": "Relentlessly severe, stern, or gloomy in appearance or manner.",
+            "Dreary": "Dull, bleak, and lifelessly repetitive; uninteresting layout.",
+            "Dull": "Lacking interest or excitement; processing with high latency.",
+            "Excluded": "Denied access to a group, conversation, or target sector.",
+            "Faint": "Lacking clarity or conviction; barely registering a signal.",
+            "Fragile": "Easily broken or damaged; requiring delicate handling parameters.",
+            "Grief-Stricken": "Completely overwhelmed by deep, sorrowful mourning processes.",
+            "Grim": "Forbidding or uninviting; structurally bleak and unyielding.",
+            "Insecure": "Lacking confidence; prone to self-doubt or instability.",
+            "Joyless": "Not giving or feeling any pleasure; completely flat.",
+            "Languid": "Displaying an aversion to any physical exertion or speed.",
+            "Neglected": "Not receiving proper attention, care, or operational updates.",
+            "Overlooked": "Passed over; not noticed or valued by adjacent nodes.",
+            "Pitying": "Feeling sorrow or compassion for the hardships of a node.",
+            "Rejected": "Dismissed or cast aside as useless or unacceptable.",
+            "Sorrowful": "Feeling or showing deep structural grief or sadness.",
+            "Spiritless": "Lacking courage, vigor, or dynamic internal animation.",
+            "Unhappy": "Not happy; experiencing a clear deficit of positive feedback.",
+            "Weary": "Feeling exhausted by arduous, continuous hardship or travel.",
+
+            // 1 - Terrible / Stressed
+            "Overwhelmed": "Completely subverted or swamped by excessive, unmanageable data loads.",
+            "Panicked": "Experiencing a sudden, blinding surge of uncontrollable fear or anxiety.",
+            "Frustrated": "Annoyed or discouraged by an inability to achieve a specific result.",
+            "Furious": "Extremely angry; operating at an absolute peak of aggressive energy.",
+            "Irritated": "Showing slight anger or annoyance; triggered by friction factors.",
+            "Enraged": "Filled with a powerful, burning, and disruptive fury.",
+            "Agitated": "Feeling or appearing troubled, nervous, or physically restless.",
+            "Resentful": "Feeling bitter indignation at having been treated unfairly.",
+            "Bitter": "Angry, hurt, or resentful because of bad experiences.",
+            "Anxious": "Experiencing intense worry, unease, or deep structural nervousness.",
+            "Dreadful": "Involving or causing great suffering, fear, or heavy unease.",
+            "Terrified": "Filled with immediate, paralyzing fear or high-alert horror.",
+            "Apprehensive": "Anxious or fearful that something bad or disruptive will happen.",
+            "Exhausted": "Completely consumed; all energetic assets entirely burned out.",
+            "Spent": "Having lost the remaining energy or resource capacity; finished.",
+            "Burned Out": "Ruined by prolonged stress, exhausting your fundamental kernel.",
+            "Drained": "Depleted of strength or emotional vitality; a dry container.",
+            "Stressed": "Experiencing severe mental or emotional strain from high pressure.",
+            "Pressured": "Urged or compelled by heavy, external constraint demands.",
+            "Flustered": "Agitated and confused; unable to sequence thoughts logically.",
+            "Defensive": "Very anxious to challenge or avoid any perceived criticism.",
+            "Insecure": "Highly unstable; missing structural trust in your layout boundaries.",
+            "Threatened": "Feeling vulnerable to incoming hostile actions or changes.",
+            "Trapped": "Confined as if in a trap; unable to find an escape vector.",
+            "Helpless": "Unable to defend oneself or act effectively; lacking tools.",
+            "Defeated": "Overcome by an obstacle or adversary; efforts completely halted.",
+            "Crushed": "Broken or deeply demoralized by an immense emotional load.",
+            "Miserable": "Wretchedly unhappy or uncomfortable; extreme low baseline status.",
+            "Desperate": "Fearing that everything is lost, leading to reckless or extreme views.",
+            "Alarmed": "Suddenly frightened or anxious by an unexpected warning signal.",
+            "Angered": "Made angry; activated into a defensive, hostile orientation.",
+            "Annoyed": "Slightly irritated; encountering persistent, minor workflow friction.",
+            "Aghast": "Filled with sudden horror, shock, or immense surprise.",
+            "Appalled": "Greatly dismayed or horrified by an unacceptable development.",
+            "Chagrined": "Feeling distressed or humiliated by a failure or disappointment.",
+            "Choked": "Unable to breathe or speak due to an intense emotional surge.",
+            "Cornered": "Forced into a position where escape or choice is severely limited.",
+            "Despairing": "Showing the complete loss or total absence of any hope tracking.",
+            "Disgusted": "Feeling an intense, deep-seated revulsion toward an element.",
+            "Dismayed": "Experiencing a sudden break in courage or resolution due to alarm.",
+            "Distressed": "Suffering from acute anxiety, sorrow, or physical pain metrics.",
+            "Disturbed": "Having had its normal layout sequence or state deeply disrupted.",
+            "Fearful": "Feeling or showing fear; anticipating incoming damage.",
+            "Frenzied": "Wildly excited, frantic, or operating with uncontrolled speed.",
+            "Fretful": "Distressed and completely incapable of remaining calm or settled.",
+            "Grieved": "Suffering intense grief; deeply wounded by catastrophic loss elements.",
+            "Hateful": "Aroused to intense hostility or absolute structural malice.",
+            "Hopeless": "Feeling or providing zero expectation of safety or improvement.",
+            "Hostile": "Unfriendly; actively antagonistic toward adjacent environment parameters.",
+            "Incensed": "Very angry; enraged into an explosive state of non-compliance.",
+            "Intimidated": "Frightened into submission or silence by a superior force metric.",
+            "Irate": "Characterized by great anger; highly activated hostile node state.",
+            "Jittery": "Nervous or unable to relax; micro-oscillations in tracking frequency.",
+            "Mortified": "Feeling deeply humiliated, shamed, or intensely embarrassed.",
+            "Offended": "Resentful or annoyed as a result of a perceived insult flag.",
+            "Outraged": "Aroused to fierce anger by an action that violates basic rules.",
+            "Scared": "Fearful, frightened, or anxious about immediate developments.",
+            "Shaken": "Deeply agitated or disturbed; emotional core temporarily unstable.",
+            "Shocked": "Experiencing a sudden, jarring structural surprise or dismay.",
+            "Vexed": "Annoyed, frustrated, or worried about an intricate, unresolved issue."
+        };
+
+        const grayScaleMap = { 1: '#222222', 2: '#444444', 3: '#666666', 4: '#888888', 5: '#aaaaaa' };
+
+        let currentActiveSlot = null;
+        let selectedMoodValue = null;
+        let selectedMoodLabel = "";
+        let pressTimer = null;
+        let longPressTriggered = false;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const today = new Date();
+            document.getElementById("current-date").innerText = `DATE: ${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}/${today.getFullYear()}`;
+            
+            // Register PWA Service Worker
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW registration error:', err));
+            }
+
+            // Sync notification button visual state
+            if (Notification.permission === "granted") {
+                const btn = document.getElementById('notif-toggle-btn');
+                btn.classList.add('active');
+                btn.innerText = "🔔 Active";
+            }
+
+            loadLocalStorageData();
+
+            window.addEventListener('contextmenu', (e) => {
+                if (e.target.closest('.emotion-label')) e.preventDefault();
+            });
+        });
+
+        /* LOCAL NOTIFICATION MANAGEMENT ENGINE */
+        function toggleNotifications() {
+            if (!("Notification" in window)) {
+                alert("Notifications are not supported by this browser.");
+                return;
+            }
+
+            if (Notification.permission === "granted") {
+                alert("Reminders are already active! Your 5 daily check-in prompts are scheduled.");
+            } else if (Notification.permission !== "denied") {
+                Notification.requestPermission().then(permission => {
+                    if (permission === "granted") {
+                        document.getElementById('notif-toggle-btn').classList.add('active');
+                        document.getElementById('notif-toggle-btn').innerText = "🔔 Active";
+                        scheduleDailyCheckinPrompts();
+                        alert("MOOOO'd Reminders Activated! You will get 5 check-in alerts across the day.");
+                    }
+                });
+            } else {
+                alert("Notifications are blocked in your browser settings. Please unblock them to enable reminders.");
+            }
+        }
+
+        function scheduleDailyCheckinPrompts() {
+            if (Notification.permission !== "granted") return;
+
+            // Target check-in trigger hours: 9AM, 12PM, 3PM, 6PM, 9PM
+            const checkinHours = [9, 12, 15, 18, 21];
+            const now = new Date();
+
+            checkinHours.forEach((hour, index) => {
+                const targetTime = new Date();
+                targetTime.setHours(hour, 0, 0, 0);
+
+                if (targetTime > now) {
+                    const delay = targetTime.getTime() - now.getTime();
+                    setTimeout(() => {
+                        triggerLocalNotification(index + 1);
+                    }, delay);
+                }
+            });
+        }
+
+        function triggerLocalNotification(slotNum) {
+            if (Notification.permission === "granted") {
+                const title = "MOOOO'd Check-In Reminder 🐄";
+                const options = {
+                    body: `Time for Check-In #${slotNum}! How fares your pasture on Melee Island?`,
+                    icon: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐄</text></svg>',
+                    vibrate: [200, 100, 200]
+                };
+
+                if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+                    navigator.serviceWorker.ready.then(registration => {
+                        registration.showNotification(title, options);
+                    });
+                } else {
+                    new Notification(title, options);
+                }
+            }
+        }
+
+        function loadLocalStorageData() {
+            let entriesLogged = 0;
+            for (let i = 1; i <= 5; i++) {
+                const savedData = localStorage.getItem(`mooood_slot_${i}`);
+                if (savedData) {
+                    entriesLogged++;
+                    const data = JSON.parse(savedData);
+                    applySlotStyles(i, data.moodValue, data.moodLabel, data.emotions);
+                } else {
+                    resetSlotStyles(i);
+                }
+            }
+            generateSemanticWordCloud();
+            renderRealtimeCalendar();
+            generateMonthlyWordCloud();
+            updateAdventureNarrator(entriesLogged);
+        }
+
+        function updateAdventureNarrator(count) {
+            const narrator = document.getElementById('adventure-narrator');
+            const messages = {
+                0: "The emotional pasture stands completely still. Five mysterious slots stretch across the map. Select Check In 1 to establish your path.",
+                1: "One tier locked in. The emotional cow moves into the central grid. Select the second slot to continue your quest.",
+                2: "Midway through the fields! Your emotional cow is chewing on some complex nuances. Check In 3 is waiting for your input.",
+                3: "Afternoon approaches. The cow gazes pensive across the timeline fence. Move onto Check In 4 to catalog the data.",
+                4: "The final barrier blocks the field boundary. Complete the fifth interaction sequence to secure today's structural record.",
+                5: "Success! Today's narrative mapping is fully populated. All inventory buffers compiled nicely."
+            };
+            narrator.innerText = messages[count] || messages[0];
+        }
+
+        function openWizard(slotNumber) {
+            currentActiveSlot = slotNumber;
+            const prompts = [
+                "Welcome back, Explorer. How fares the opening leg of your grand journey across Melee Pasture?",
+                "A second check-in slot appears! What status codes do you bring from the midday operations?",
+                "We hit the center waypoint. How stands your inner equilibrium right now?",
+                "The afternoon shadow lengthens. State your current emotional inventory configuration.",
+                "The final fence line! Declare your status before we log this entire day container to memory disk."
+            ];
+            document.getElementById('npc-speech-prompt').innerText = `"${prompts[slotNumber - 1]}"`;
+            showScreen('mood');
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(`screen-${screenId}`).classList.add('active');
+        }
+
+        function selectMood(value, label) {
+            selectedMoodValue = value;
+            selectedMoodLabel = label;
+            
+            const skullPrompts = {
+                5: "Dynamic energy registered! Hold a retort down to inspect its definition, or tap to choose.",
+                4: "A steady frequency. Long press for definition lookup insight. Tap to select.",
+                3: "Neutral terrain. Hold to read vocabulary, click to select options.",
+                2: "Low pressure tracking. Long press to read explanations, tap to add items.",
+                1: "A heavy storm blocks the pasture! Hold choices down to inspect counter-insults!"
+            };
+            
+            document.getElementById("clash-speech-prompt").innerText = `"${skullPrompts[value]}"`;
+            document.getElementById("emotions-header").innerText = `RETORT GRID: ${label}`;
+            
+            const gridContainer = document.getElementById("emotions-grid-container");
+            gridContainer.innerHTML = "";
+            document.getElementById("submit-entry-btn").disabled = true;
+            
+            emotionsDatabase[value].forEach((emotion, index) => {
+                const checkboxId = `emotion-${index}`;
+                const wrapper = document.createElement('div');
+                
+                wrapper.innerHTML = `
+                    <div class="emotion-item-wrapper">
+                        <input type="checkbox" id="${checkboxId}" class="emotion-checkbox" value="${emotion}">
+                        <label for="${checkboxId}" class="emotion-label" 
+                               onmousedown="startDefinitionPress(event, '${emotion}')" 
+                               onmouseup="endDefinitionPress(event, '${checkboxId}')" 
+                               onmouseleave="endDefinitionPress(event, null)"
+                               ontouchstart="startDefinitionPress(event, '${emotion}')" 
+                               ontouchend="endDefinitionPress(event, '${checkboxId}')">
+                            ${emotion}
+                        </label>
+                    </div>
+                `;
+                gridContainer.appendChild(wrapper.firstElementChild);
+            });
+
+            showScreen('emotions');
+
+            const scrollBox = document.getElementById('emotions-scroll-box');
+            if (scrollBox) {
+                scrollBox.scrollTop = 0;
+            }
+        }
+
+        function startDefinitionPress(event, emotionKey) {
+            if (pressTimer) clearTimeout(pressTimer);
+            longPressTriggered = false;
+            
+            pressTimer = setTimeout(() => {
+                longPressTriggered = true;
+                
+                if (navigator.vibrate) navigator.vibrate(35);
+
+                const portal = document.getElementById('global-popup-portal');
+                const shroud = document.getElementById('global-shroud');
+                const textDefinition = emotionDefinitions[emotionKey] || genericDefinitionFallback;
+                
+                portal.innerHTML = `<strong>${emotionKey.toUpperCase()}</strong><br><br>${textDefinition}`;
+                portal.style.display = 'block';
+                shroud.style.background = 'rgba(0,0,0,0.5)';
+                shroud.style.display = 'block';
+            }, 400);
+        }
+
+        function endDefinitionPress(event, targetCheckboxId) {
+            if (pressTimer) clearTimeout(pressTimer);
+            
+            const portal = document.getElementById('global-popup-portal');
+            const shroud = document.getElementById('global-shroud');
+            
+            portal.style.display = 'none';
+            shroud.style.display = 'none';
+            
+            if (longPressTriggered) {
+                if (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                longPressTriggered = false;
+                return false;
+            }
+            
+            if (targetCheckboxId && (event.type === 'mouseup' || event.type === 'touchend')) {
+                setTimeout(updateSubmitButtonState, 10);
+            }
+        }
+
+        function updateSubmitButtonState() {
+            const checkedBoxes = document.querySelectorAll('.emotion-checkbox:checked');
+            document.getElementById("submit-entry-btn").disabled = (checkedBoxes.length === 0);
+        }
+
+        function saveCheckIn() {
+            const checkedBoxes = document.querySelectorAll('.emotion-checkbox:checked');
+            const selectedEmotions = Array.from(checkedBoxes).map(cb => cb.value);
+
+            const logPayload = { moodValue: selectedMoodValue, moodLabel: selectedMoodLabel, emotions: selectedEmotions };
+            localStorage.setItem(`mooood_slot_${currentActiveSlot}`, JSON.stringify(logPayload));
+
+            const now = new Date();
+            const dateKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            let dateData = JSON.parse(localStorage.getItem(`mooood_cal_${dateKey}`)) || {};
+            dateData[currentActiveSlot] = logPayload;
+            localStorage.setItem(`mooood_cal_${dateKey}`, JSON.stringify(dateData));
+
+            applySlotStyles(currentActiveSlot, selectedMoodValue, selectedMoodLabel, selectedEmotions);
+            
+            let completedCount = 0;
+            for (let i = 1; i <= 5; i++) {
+                if (localStorage.getItem(`mooood_slot_${i}`)) completedCount++;
+            }
+
+            if (completedCount === 5) {
+                const randomIndex = Math.floor(Math.random() * cowVictoryTaglines.length);
+                document.getElementById('celebration-tagline-target').innerText = cowVictoryTaglines[randomIndex];
+
+                showScreen('celebration');
+                setTimeout(() => {
+                    showScreen('home');
+                    loadLocalStorageData();
+                }, 5000);
+            } else {
+                showScreen('home');
+                loadLocalStorageData();
+            }
+        }
+
+        function applySlotStyles(slotNum, value, label, emotionsList) {
+            const slotButton = document.getElementById(`slot-${slotNum}`);
+            const dataContainer = document.getElementById(`slot-data-${slotNum}`);
+            slotButton.style.backgroundColor = grayScaleMap[value];
+            dataContainer.innerHTML = `
+                <span class="slot-mood">${label}</span>
+                <span class="slot-emotions">${emotionsList.join(', ')}</span>
+            `;
+        }
+
+        function resetSlotStyles(slotNum) {
+            const slotButton = document.getElementById(`slot-${slotNum}`);
+            const dataContainer = document.getElementById(`slot-data-${slotNum}`);
+            slotButton.style.backgroundColor = 'var(--empty-color)';
+            dataContainer.innerHTML = "";
+        }
+
+        function generateSemanticWordCloud() {
+            const targetContainer = document.getElementById('word-cloud-target');
+            targetContainer.innerHTML = "";
+
+            let integratedEmotions = [];
+            let counts = {};
+
+            for (let i = 1; i <= 5; i++) {
+                const savedData = localStorage.getItem(`mooood_slot_${i}`);
+                if (savedData) {
+                    const parsed = JSON.parse(savedData);
+                    parsed.emotions.forEach(emo => {
+                        integratedEmotions.push({ text: emo, moodVal: parsed.moodValue });
+                        counts[emo] = (counts[emo] || 0) + 1;
+                    });
+                }
+            }
+
+            if (integratedEmotions.length === 0) {
+                targetContainer.innerHTML = `<span style="color: #bbb; font-size: 0.8rem; font-style: italic;">No items loaded. Complete a check-in.</span>`;
+                return;
+            }
+
+            let distinctTags = [];
+            let monitored = new Set();
+            
+            integratedEmotions.forEach(item => {
+                if (!monitored.has(item.text)) {
+                    monitored.add(item.text);
+                    distinctTags.push(item);
+                }
+            });
+
+            distinctTags.forEach(tag => {
+                const span = document.createElement('span');
+                span.classList.add('cloud-tag');
+                span.innerText = tag.text;
+                span.style.color = grayScaleMap[tag.moodVal];
+                const scaleSize = 0.8 + (counts[tag.text] * 0.35);
+                span.style.fontSize = `${scaleSize}rem`;
+                targetContainer.appendChild(span);
+            });
+        }
+
+        function generateMonthlyWordCloud() {
+            const targetContainer = document.getElementById('monthly-word-cloud-target');
+            const titleTarget = document.getElementById('monthly-cloud-title');
+            targetContainer.innerHTML = "";
+
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth();
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            
+            titleTarget.innerText = `${monthNames[month]} Emotion Cloud`;
+
+            const totalDaysInMonth = new Date(year, month + 1, 0).getDate();
+            let integratedEmotions = [];
+            let counts = {};
+
+            for (let day = 1; day <= totalDaysInMonth; day++) {
+                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                
+                let dayData = {};
+                if (day === now.getDate()) {
+                    for (let s = 1; s <= 5; s++) {
+                        const activeVal = localStorage.getItem(`mooood_slot_${s}`);
+                        if (activeVal) dayData[s] = JSON.parse(activeVal);
+                    }
+                } else {
+                    dayData = JSON.parse(localStorage.getItem(`mooood_cal_${dateKey}`)) || {};
+                }
+
+                for (let s = 1; s <= 5; s++) {
+                    if (dayData[s] && dayData[s].emotions) {
+                        dayData[s].emotions.forEach(emo => {
+                            integratedEmotions.push({ text: emo, moodVal: dayData[s].moodValue });
+                            counts[emo] = (counts[emo] || 0) + 1;
+                        });
+                    }
+                }
+            }
+
+            if (integratedEmotions.length === 0) {
+                targetContainer.innerHTML = `<span style="color: #bbb; font-size: 0.8rem; font-style: italic;">No monthly items logged yet.</span>`;
+                return;
+            }
+
+            let distinctTags = [];
+            let monitored = new Set();
+            
+            integratedEmotions.forEach(item => {
+                if (!monitored.has(item.text)) {
+                    monitored.add(item.text);
+                    distinctTags.push(item);
+                }
+            });
+
+            distinctTags.sort((a, b) => counts[b.text] - counts[a.text]);
+
+            distinctTags.forEach(tag => {
+                const span = document.createElement('span');
+                span.classList.add('cloud-tag');
+                span.innerText = tag.text;
+                span.style.color = grayScaleMap[tag.moodVal];
+                const scaleSize = 0.75 + (counts[tag.text] * 0.2);
+                span.style.fontSize = `${Math.min(scaleSize, 2.5)}rem`;
+                targetContainer.appendChild(span);
+            });
+        }
+
+        function renderRealtimeCalendar() {
+            const target = document.getElementById('calendar-grid-target');
+            const monthYearTitle = document.getElementById('calendar-month-year');
+            target.innerHTML = "";
+
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth();
+            const todayDate = now.getDate();
+
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            monthYearTitle.innerText = `${monthNames[month]} ${year}`;
+
+            const dayHeaders = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+            dayHeaders.forEach(dh => {
+                const hEl = document.createElement('div');
+                hEl.classList.add('calendar-day-head');
+                hEl.innerText = dh;
+                target.appendChild(hEl);
+            });
+
+            const firstDayIndex = new Date(year, month, 1).getDay();
+            const totalDaysInMonth = new Date(year, month + 1, 0).getDate();
+
+            for (let i = 0; i < firstDayIndex; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.classList.add('calendar-day-cell', 'empty');
+                target.appendChild(emptyCell);
+            }
+
+            for (let day = 1; day <= totalDaysInMonth; day++) {
+                const cell = document.createElement('div');
+                cell.classList.add('calendar-day-cell');
+                
+                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                
+                let storedDayData = {};
+                if (day === todayDate) {
+                    for (let s = 1; s <= 5; s++) {
+                        const activeVal = localStorage.getItem(`mooood_slot_${s}`);
+                        if (activeVal) storedDayData[s] = JSON.parse(activeVal);
+                    }
+                    cell.classList.add('today');
+                } else {
+                    storedDayData = JSON.parse(localStorage.getItem(`mooood_cal_${dateKey}`)) || {};
+                }
+
+                let totalVal = 0;
+                let count = 0;
+
+                for (let s = 1; s <= 5; s++) {
+                    if (storedDayData[s]) {
+                        const hexColor = grayScaleMap[storedDayData[s].moodValue];
+                        const decIntensity = parseInt(hexColor.replace('#', '').substring(0, 2), 16);
+                        totalVal += decIntensity;
+                        count++;
+                    }
+                }
+
+                cell.innerHTML = `<span>${day}</span>`;
+
+                if (count > 0) {
+                    const avgIntensity = Math.round(totalVal / count);
+                    const hexComponent = avgIntensity.toString(16).padStart(2, '0');
+                    
+                    cell.style.backgroundColor = `#${hexComponent}${hexComponent}${hexComponent}`;
+                    cell.style.color = "#ffffff";
+
+                    if (count === 5) {
+                        cell.classList.add('completed-5');
+                        cell.innerHTML += `<span class="cell-badge">🐮</span>`;
+                    }
+                }
+
+                cell.onclick = () => {
+                    const narrator = document.getElementById('adventure-narrator');
+                    if (count === 5) {
+                        narrator.innerText = `You examine Day ${day}. All 5 retorts locked in! Mean intensity: #${Math.round(totalVal / count).toString(16)}. The pasture is victorious!`;
+                    } else if (count > 0) {
+                        narrator.innerText = `You examine Day ${day}. ${count} of 5 check-ins logged. Keep pushing across the fence line!`;
+                    } else {
+                        narrator.innerText = `You examine Day ${day}. An unwritten day in the fields of Melee Island.`;
+                    }
+                };
+
+                target.appendChild(cell);
+            }
+        }
+
+        function resetAllSlots() {
+            if (confirm("Clear active save game slots and wipe the cloud dictionary buffer?")) {
+                for (let i = 1; i <= 5; i++) localStorage.removeItem(`mooood_slot_${i}`);
+                loadLocalStorageData();
+            }
+        }
+    </script>
+</body>
+</html>
